@@ -38,10 +38,8 @@ void Delegate::HandleChangeToModeWitheStatus(uint8_t mode, ModeSelect::Commands:
 
 bool Delegate::IsSupportedMode(uint8_t modeValue)
 { 
-    for (ModeOptionStructType modeStruct : modeOptions)
-    {
-        if (modeStruct.mode == modeValue)
-        {
+    for (uint8_t i = 0; i < nModes; i++) {
+        if ((modeOptions.get()+i)->mode == modeValue) {
             return true;
         }
     }
@@ -51,14 +49,14 @@ bool Delegate::IsSupportedMode(uint8_t modeValue)
 
 Status Delegate::GetMode(uint8_t modeValue, ModeOptionStructType &modeOption)
 {
-    for (ModeOptionStructType modeStruct : modeOptions)
-    {
-        if (modeStruct.mode == modeValue)
-        {
-            modeOption = modeStruct;
-            return Status::Success;
-        }
-    }
+//    for (uint8_t i = 0; i < nModes; i++) {
+//        if ((modeOptions.get()+i)->mode == modeValue) {
+//            // todo return a copy
+//            modeOption = modeStruct;
+//            return Status::Success;
+//        }
+//    }
+
     ChipLogDetail(Zcl, "Cannot find the mode %u", modeValue);
     return Status::InvalidCommand;
 }
