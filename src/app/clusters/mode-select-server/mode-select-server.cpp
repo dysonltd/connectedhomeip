@@ -412,20 +412,19 @@ CHIP_ERROR Instance::Read(const ConcreteReadAttributePath & aPath, AttributeValu
     switch (aPath.mAttributeId)
     {
     case Attributes::SupportedModes::Id:
-        if (delegate->nModes == 0)
+        if (delegate->NumberOfModes() == 0)
         {
             aEncoder.EncodeEmptyList();
             return CHIP_NO_ERROR;
         }
 
-        CHIP_ERROR err;
-        const auto mo = delegate->modeOptions.get();
-        const auto nModes = delegate->nModes;
-        err           = aEncoder.EncodeList([mo, nModes](const auto & encoder) -> CHIP_ERROR {
-            for (uint8_t i = 0; i < nModes; i++)
+        Delegate *d = delegate;
+        CHIP_ERROR err = aEncoder.EncodeList([d](const auto & encoder) -> CHIP_ERROR {
+            for (uint8_t i = 0; i < d->NumberOfModes(); i++)
             {
-                ModeOptionStructType *mode = mo+i;
-                ReturnErrorOnFailure(encoder.Encode(*mode));
+                ModeOptionStructType mode;
+                d->getModeByIndex(i, mode);
+                ReturnErrorOnFailure(encoder.Encode(mode));
             }
             return CHIP_NO_ERROR;
         });

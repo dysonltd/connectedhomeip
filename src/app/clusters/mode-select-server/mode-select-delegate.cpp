@@ -36,27 +36,46 @@ void Delegate::HandleChangeToModeWitheStatus(uint8_t mode, ModeSelect::Commands:
     response.status = to_underlying(ChangeToModeResponseStatus::kSuccess);
 }
 
+uint8_t Delegate::NumberOfModes()
+{
+    return 0;
+}
+
+bool Delegate::getModeByIndex(uint8_t modeIndex, ModeOptionStructType &modeStruct)
+{
+    return false;
+}
+
 bool Delegate::IsSupportedMode(uint8_t modeValue)
-{ 
-    for (uint8_t i = 0; i < nModes; i++) {
-        if ((modeOptions.get()+i)->mode == modeValue) {
-            return true;
+{
+    ModeOptionStructType tempOption;
+    for (uint8_t i = 0; i < NumberOfModes(); i++) {
+        if (getModeByIndex(i, tempOption)) {
+            if (tempOption.mode == modeValue) {
+                return true;
+            }
+        } else {
+            break;
         }
     }
     ChipLogDetail(Zcl, "Cannot find the mode %u", modeValue);
     return false;
 }
 
-Status Delegate::GetMode(uint8_t modeValue, ModeOptionStructType &modeOption)
+bool Delegate::GetModeByValue(uint16_t modeValue, ModeOptionStructType &modeOption)
 {
-//    for (uint8_t i = 0; i < nModes; i++) {
-//        if ((modeOptions.get()+i)->mode == modeValue) {
-//            // todo return a copy
-//            modeOption = modeStruct;
-//            return Status::Success;
-//        }
-//    }
+    ModeOptionStructType tempOption;
+    for (uint8_t i = 0; i < NumberOfModes(); i++) {
+        if (getModeByIndex(i, tempOption)) {
+            if (tempOption.mode == modeValue) {
+                modeOption = tempOption;
+                return true;
+            }
+        } else {
+            break;
+        }
+    }
 
     ChipLogDetail(Zcl, "Cannot find the mode %u", modeValue);
-    return Status::InvalidCommand;
+    return false;
 }

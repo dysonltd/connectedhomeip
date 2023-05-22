@@ -38,9 +38,6 @@ namespace ModeSelect {
 class Delegate
 {
 public:
-    const std::unique_ptr<ModeOptionStructType> modeOptions;
-    const uint8_t nModes;
-
     /**
      * This is a helper function to build a mode option structure. It takes the label/name of the mode,
      * the value of the mode and a list of semantic tags that apply to this mode.
@@ -55,9 +52,14 @@ public:
         return option;
     }
 
-    explicit Delegate(ModeOptionStructType *modes, uint8_t length) : modeOptions(modes), nModes(length) {}
+    explicit Delegate() = default;
 
     virtual CHIP_ERROR Init() = 0;
+
+    /**
+     * Returns the number of modes provided and managed by the delegate.
+     */
+    virtual uint8_t NumberOfModes();
 
     /**
      * This function returns true if the mode value given matches one of the supported modes, otherwise it returns false.
@@ -67,14 +69,14 @@ public:
     bool IsSupportedMode(uint8_t mode);
 
     /**
-     * If the mode value given is supported, this function will update modeOption to the ModeOptionStructType for the mode with
-     * the matching value and returns success. If the mode value given is not supported, the modeOption remains untouched and
-     * returns an InvalidCommand status.
-     *
-     * @param mode
-     * @param modeOption
+     * If the modeValue given is supported, this function will update modeOption to the ModeOptionStructType for the mode with
+     * the matching value and returns true. If the mode value given is not supported, the modeOption remains untouched and
+     * returns false.
+     * @param modeValue The `Mode` value of the mode to be returned.
+     * @param modeOption A reference to the structure to be modified with the mode information.
+     * @return true if the function was successful, false otherwise.
      */
-    Status GetMode(uint8_t mode, ModeOptionStructType & modeOption);
+    bool GetModeByValue(uint16_t modeValue, ModeOptionStructType &modeOption);
 
     /**
      * When a ChangeToMode command is received, if the NewMode value is a supported made, this function is called to decide if we
@@ -101,6 +103,14 @@ public:
     virtual void HandleChangeToModeWitheStatus(uint8_t mode, ModeSelect::Commands::ChangeToModeResponse::Type & response);
 
     virtual ~Delegate() = default;
+
+    /**
+     * Get the mode option structure of the Nth mode in the list of modes. This is mostly useful for SDK code.
+     * @param modeIndex The index in the list of modes of the mode to be returned.
+     * @param modeStruct A reference to the structure to be modified with the mode information.
+     * @return true if the function was successful, false otherwise.
+     */
+    virtual bool getModeByIndex(uint8_t modeIndex, ModeOptionStructType &modeStruct);
 };
 
 } // namespace ModeSelect

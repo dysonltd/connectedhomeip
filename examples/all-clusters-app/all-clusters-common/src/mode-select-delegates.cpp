@@ -57,6 +57,16 @@ void ModeSelectDelegate::HandleChangeToModeWitheStatus(uint8_t mode, Commands::C
     }
 }
 
+bool ModeSelectDelegate::getModeByIndex(uint8_t modeIndex, ModeOptionStructType &modeStruct)
+{
+    if (modeIndex < NumberOfModes()) {
+        modeStruct = modeOptions[modeIndex];
+        return true;
+    }
+    return false;
+}
+
+
 ////-- RVC Run delegate functions
 //CHIP_ERROR RvcRunDelegate::Init()
 //{

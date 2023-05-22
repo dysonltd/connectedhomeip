@@ -25,6 +25,11 @@
 #include <cstring>
 #include <utility>
 
+template <typename T>
+using List               = chip::app::DataModel::List<T>;
+using SemanticTagStructType = chip::app::Clusters::ModeSelect::Structs::SemanticTagStruct::Type;
+using ModeOptionStructType = chip::app::Clusters::ModeSelect::Structs::ModeOptionStruct::Type;
+
 namespace chip {
 namespace app {
 namespace Clusters {
@@ -74,13 +79,26 @@ namespace ModeSelect {
 class ModeSelectDelegate : public Delegate
 {
 private:
+    SemanticTagStructType semanticTagZero[1] = { { .value = 0 } };
+    List<const SemanticTagStructType> noSemanticTags;
+    SemanticTagStructType semanticTagsBoost[2] = { { .value = static_cast<uint16_t>(Clusters::ModeSelect::SemanticTags::kMax) },
+                                                   { .value = static_cast<uint16_t>(Clusters::RvcClean::SemanticTags::kDeepClean) }};
+
+    const ModeOptionStructType modeOptions[3] = {
+        chip::app::Clusters::ModeSelect::Delegate::BuildModeOptionStruct("Black", Clusters::ModeSelect::ModeBlack, List<const SemanticTagStructType>(semanticTagZero)),
+        chip::app::Clusters::ModeSelect::Delegate::BuildModeOptionStruct("Cappuccino", Clusters::ModeSelect::ModeCappuccino, noSemanticTags),
+        chip::app::Clusters::ModeSelect::Delegate::BuildModeOptionStruct("Espresso", Clusters::ModeSelect::ModeEspresso, List<const SemanticTagStructType>(semanticTagsBoost))
+    };
+
     CHIP_ERROR Init() override;
     Status HandleChangeToMode(uint8_t mode) override;
     void HandleChangeToModeWitheStatus(uint8_t mode, ModeSelect::Commands::ChangeToModeResponse::Type &response) override;
 
+    uint8_t NumberOfModes() override {return 3;};
+    bool getModeByIndex(uint8_t modeIndex, ModeOptionStructType &modeStruct) override;
+
 public:
-    explicit ModeSelectDelegate(chip::app::Clusters::ModeSelect::Structs::ModeOptionStruct::Type *modes, uint8_t length) :
-        Delegate(modes, length) {}
+    ModeSelectDelegate() = default;
 
     ~ModeSelectDelegate() override = default;
 };

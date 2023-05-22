@@ -195,25 +195,8 @@ ExampleDeviceInstanceInfoProvider gExampleDeviceInstanceInfoProvider;
 
 // Mode select clusters
 namespace {
-    template <typename T>
-    using List               = chip::app::DataModel::List<T>;
-    using SemanticTagStructType = chip::app::Clusters::ModeSelect::Structs::SemanticTagStruct::Type;
-    using ModeOptionStructType = chip::app::Clusters::ModeSelect::Structs::ModeOptionStruct::Type;
 
-
-    constexpr SemanticTagStructType semanticTagZero[] = { { .value = 0 } };
-    List<const SemanticTagStructType> noSemanticTags;
-    constexpr SemanticTagStructType semanticTagsBoost[] = { { .value = static_cast<uint16_t>(Clusters::ModeSelect::SemanticTags::kMax) },
-                                                              { .value = static_cast<uint16_t>(Clusters::RvcClean::SemanticTags::kDeepClean) }};
-
-    // Mode Select
-    ModeOptionStructType coffeeOptions[] = {
-        chip::app::Clusters::ModeSelect::Delegate::BuildModeOptionStruct("Black", Clusters::ModeSelect::ModeBlack, List<const SemanticTagStructType>(semanticTagZero)),
-        chip::app::Clusters::ModeSelect::Delegate::BuildModeOptionStruct("Cappuccino", Clusters::ModeSelect::ModeCappuccino, noSemanticTags),
-        chip::app::Clusters::ModeSelect::Delegate::BuildModeOptionStruct("Espresso", Clusters::ModeSelect::ModeEspresso, List<const SemanticTagStructType>(semanticTagsBoost))
-    };
-
-    Clusters::ModeSelect::ModeSelectDelegate modeSelectDelegate(coffeeOptions, 3);
+    Clusters::ModeSelect::ModeSelectDelegate modeSelectDelegate;
     Clusters::ModeSelect::Instance modeSelectInstance(0x1, Clusters::ModeSelect::Id, &modeSelectDelegate);
 
 //    // RVC Run

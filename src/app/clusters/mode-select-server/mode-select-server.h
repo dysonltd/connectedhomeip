@@ -66,7 +66,7 @@ public:
 private:
     EndpointId endpointId{};
     ClusterId clusterId{};
-    std::unique_ptr<Delegate> delegate;
+    Delegate *delegate;
 
     void HandleChangeToMode(HandlerContext & ctx, const Commands::ChangeToMode::DecodableType & req);
     void HandleChangeToModeWithStatus(HandlerContext & ctx, const Commands::ChangeToModeWithStatus::DecodableType & req);
