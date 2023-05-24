@@ -41,17 +41,51 @@ uint8_t Delegate::NumberOfModes()
     return 0;
 }
 
-bool Delegate::getModeByIndex(uint8_t modeIndex, ModeOptionStructType &modeStruct)
+CharSpan Delegate::getModeLabelByIndex(uint8_t modeIndex, bool &found)
 {
-    return false;
+    found = false;
+    return CharSpan{};
+}
+
+uint8_t Delegate::getModeValueByIndex(uint8_t modeIndex, bool &found)
+{
+    found = false;
+    return 0;
+}
+
+List<const SemanticTagStructType> Delegate::getModeTagsByIndex(uint8_t modeIndex, bool &found)
+{
+    found = false;
+    return List<const SemanticTagStructType>{};
+}
+
+ModeOptionStructType Delegate::getModeByIndex(uint8_t modeIndex, bool &found)
+{
+    ModeOptionStructType mode;
+    if (modeIndex < NumberOfModes())
+    {
+        mode.label = getModeLabelByIndex(modeIndex, found);
+        if (!found) {
+            return mode;
+        }
+        mode.mode = getModeValueByIndex(modeIndex, found);
+        if (!found) {
+            return mode;
+        }
+        mode.semanticTags = getModeTagsByIndex(modeIndex, found);
+        return mode;
+    }
+    found = false;
+    return mode;
 }
 
 bool Delegate::IsSupportedMode(uint8_t modeValue)
 {
-    ModeOptionStructType tempOption;
+    bool found = false;
     for (uint8_t i = 0; i < NumberOfModes(); i++) {
-        if (getModeByIndex(i, tempOption)) {
-            if (tempOption.mode == modeValue) {
+        uint8_t val = getModeValueByIndex(i, found);
+        if (found) {
+            if (val == modeValue) {
                 return true;
             }
         } else {
@@ -62,20 +96,19 @@ bool Delegate::IsSupportedMode(uint8_t modeValue)
     return false;
 }
 
-bool Delegate::GetModeByValue(uint16_t modeValue, ModeOptionStructType &modeOption)
+ModeOptionStructType Delegate::GetModeByValue(uint16_t modeValue, bool &found)
 {
-    ModeOptionStructType tempOption;
     for (uint8_t i = 0; i < NumberOfModes(); i++) {
-        if (getModeByIndex(i, tempOption)) {
-            if (tempOption.mode == modeValue) {
-                modeOption = tempOption;
-                return true;
+        uint8_t val = getModeValueByIndex(i, found);
+        if (found) {
+            if (val == modeValue) {
+                return getModeByIndex(i, found);
             }
         } else {
             break;
         }
     }
-
     ChipLogDetail(Zcl, "Cannot find the mode %u", modeValue);
-    return false;
+    found = false;
+    return ModeOptionStructType{};
 }

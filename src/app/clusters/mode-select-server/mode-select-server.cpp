@@ -422,8 +422,11 @@ CHIP_ERROR Instance::Read(const ConcreteReadAttributePath & aPath, AttributeValu
         CHIP_ERROR err = aEncoder.EncodeList([d](const auto & encoder) -> CHIP_ERROR {
             for (uint8_t i = 0; i < d->NumberOfModes(); i++)
             {
-                ModeOptionStructType mode;
-                d->getModeByIndex(i, mode);
+                bool found;
+                ModeOptionStructType mode = d->getModeByIndex(i, found);
+                if (!found) {
+                    return CHIP_ERROR_NOT_FOUND;
+                }
                 ReturnErrorOnFailure(encoder.Encode(mode));
             }
             return CHIP_NO_ERROR;

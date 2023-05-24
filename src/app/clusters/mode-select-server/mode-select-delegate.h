@@ -76,7 +76,7 @@ public:
      * @param modeOption A reference to the structure to be modified with the mode information.
      * @return true if the function was successful, false otherwise.
      */
-    bool GetModeByValue(uint16_t modeValue, ModeOptionStructType &modeOption);
+    ModeOptionStructType GetModeByValue(uint16_t modeValue, bool &found);
 
     /**
      * When a ChangeToMode command is received, if the NewMode value is a supported made, this function is called to decide if we
@@ -107,10 +107,35 @@ public:
     /**
      * Get the mode option structure of the Nth mode in the list of modes. This is mostly useful for SDK code.
      * @param modeIndex The index in the list of modes of the mode to be returned.
-     * @param modeStruct A reference to the structure to be modified with the mode information.
-     * @return true if the function was successful, false otherwise.
+     * @param found is set to true if a mode is found. If set to false, the return should be ignored.
+     * @return a ModeOptionStruct containing a copy of the mode information.
      */
-    virtual bool getModeByIndex(uint8_t modeIndex, ModeOptionStructType &modeStruct);
+    ModeOptionStructType getModeByIndex(uint8_t modeIndex, bool &found);
+
+    /**
+     * Get the mode label of the Nth mode in the list of modes. This is mostly useful for SDK code.
+     * @param modeIndex The index in the list of modes of the mode to be returned.
+     * @param found is set to true if a mode is found. If set to false, the return should be ignored.
+     * @return the mode label of the mode at modeIndex.
+     */
+    virtual CharSpan getModeLabelByIndex(uint8_t modeIndex, bool &found);
+
+    /**
+     * Get the mode value of the Nth mode in the list of modes. This is mostly useful for SDK code.
+     * @param modeIndex The index in the list of modes of the mode to be returned.
+     * @param found is set to true if a mode is found. If set to false, the return should be ignored.
+     * @return the mode value of the mode at modeIndex.
+     */
+    virtual uint8_t getModeValueByIndex(uint8_t modeIndex, bool &found);
+
+    /**
+     * Get the mode tags of the Nth mode in the list of modes. This is mostly useful for SDK code.
+     * @param modeIndex The index in the list of modes of the mode to be returned.
+     * @param found is set to true if a mode is found. If set to false, the return should be ignored.
+     * @return a list of the mode tags of the mode at modeIndex.
+     */
+    virtual List<const SemanticTagStructType> getModeTagsByIndex(uint8_t modeIndex, bool &found);
+
 };
 
 } // namespace ModeSelect

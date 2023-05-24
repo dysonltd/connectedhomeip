@@ -57,14 +57,33 @@ void ModeSelectDelegate::HandleChangeToModeWitheStatus(uint8_t mode, Commands::C
     }
 }
 
-bool ModeSelectDelegate::getModeByIndex(uint8_t modeIndex, ModeOptionStructType &modeStruct)
+chip::CharSpan ModeSelectDelegate::getModeLabelByIndex(uint8_t modeIndex, bool &found)
 {
     if (modeIndex < NumberOfModes()) {
-        modeStruct = modeOptions[modeIndex];
-        return true;
+        found = true;
+        return modeOptions[modeIndex].label;
     }
-    return false;
+    return Delegate::getModeLabelByIndex(modeIndex, found);
 }
+
+uint8_t ModeSelectDelegate::getModeValueByIndex(uint8_t modeIndex, bool &found)
+{
+    if (modeIndex < NumberOfModes()) {
+        found = true;
+        return modeOptions[modeIndex].mode;
+    }
+    return Delegate::getModeValueByIndex(modeIndex, found);
+}
+
+List<const SemanticTagStructType> ModeSelectDelegate::getModeTagsByIndex(uint8_t modeIndex, bool &found)
+{
+    if (modeIndex < NumberOfModes()) {
+        found = true;
+        return modeOptions[modeIndex].semanticTags;
+    }
+    return  Delegate::getModeTagsByIndex(modeIndex, found);
+}
+
 
 
 ////-- RVC Run delegate functions
