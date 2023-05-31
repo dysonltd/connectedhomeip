@@ -95,9 +95,9 @@ private:
     void HandleChangeToModeWitheStatus(uint8_t mode, ModeSelect::Commands::ChangeToModeResponse::Type &response) override;
 
     uint8_t NumberOfModes() override {return 3;};
-    CharSpan getModeLabelByIndex(uint8_t modeIndex, bool &found) override;
-    uint8_t getModeValueByIndex(uint8_t modeIndex, bool &found) override;
-    List<const SemanticTagStructType> getModeTagsByIndex(uint8_t modeIndex, bool &found) override;
+    CHIP_ERROR getModeLabelByIndex(uint8_t modeIndex, chip::MutableCharSpan &label) override;
+    CHIP_ERROR getModeValueByIndex(uint8_t modeIndex, uint8_t &value) override;
+    CHIP_ERROR getModeTagsByIndex(uint8_t modeIndex, List<const SemanticTagStructType> &tags) override;
 
 public:
     ModeSelectDelegate() = default;

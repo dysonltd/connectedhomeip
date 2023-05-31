@@ -41,51 +41,28 @@ uint8_t Delegate::NumberOfModes()
     return 0;
 }
 
-CharSpan Delegate::getModeLabelByIndex(uint8_t modeIndex, bool &found)
+CHIP_ERROR Delegate::getModeLabelByIndex(uint8_t modeIndex, MutableCharSpan &label)
 {
-    found = false;
-    return CharSpan{};
+    return CHIP_ERROR_NOT_IMPLEMENTED;
 }
 
-uint8_t Delegate::getModeValueByIndex(uint8_t modeIndex, bool &found)
+CHIP_ERROR Delegate::getModeValueByIndex(uint8_t modeIndex, uint8_t &value)
 {
-    found = false;
-    return 0;
+    return CHIP_ERROR_NOT_IMPLEMENTED;
 }
 
-List<const SemanticTagStructType> Delegate::getModeTagsByIndex(uint8_t modeIndex, bool &found)
+CHIP_ERROR Delegate::getModeTagsByIndex(uint8_t modeIndex, List<const SemanticTagStructType> &tags)
 {
-    found = false;
-    return List<const SemanticTagStructType>{};
-}
-
-ModeOptionStructType Delegate::getModeByIndex(uint8_t modeIndex, bool &found)
-{
-    ModeOptionStructType mode;
-    if (modeIndex < NumberOfModes())
-    {
-        mode.label = getModeLabelByIndex(modeIndex, found);
-        if (!found) {
-            return mode;
-        }
-        mode.mode = getModeValueByIndex(modeIndex, found);
-        if (!found) {
-            return mode;
-        }
-        mode.semanticTags = getModeTagsByIndex(modeIndex, found);
-        return mode;
-    }
-    found = false;
-    return mode;
+    return CHIP_ERROR_NOT_IMPLEMENTED;
 }
 
 bool Delegate::IsSupportedMode(uint8_t modeValue)
 {
-    bool found = false;
     for (uint8_t i = 0; i < NumberOfModes(); i++) {
-        uint8_t val = getModeValueByIndex(i, found);
-        if (found) {
-            if (val == modeValue) {
+        uint8_t value;
+        auto err = getModeValueByIndex(i, value);
+        if (err == CHIP_NO_ERROR) {
+            if (value == modeValue) {
                 return true;
             }
         } else {
@@ -94,21 +71,4 @@ bool Delegate::IsSupportedMode(uint8_t modeValue)
     }
     ChipLogDetail(Zcl, "Cannot find the mode %u", modeValue);
     return false;
-}
-
-ModeOptionStructType Delegate::GetModeByValue(uint16_t modeValue, bool &found)
-{
-    for (uint8_t i = 0; i < NumberOfModes(); i++) {
-        uint8_t val = getModeValueByIndex(i, found);
-        if (found) {
-            if (val == modeValue) {
-                return getModeByIndex(i, found);
-            }
-        } else {
-            break;
-        }
-    }
-    ChipLogDetail(Zcl, "Cannot find the mode %u", modeValue);
-    found = false;
-    return ModeOptionStructType{};
 }

@@ -16,7 +16,6 @@
 *    limitations under the License.
 */
 #include <app-common/zap-generated/attributes/Accessors.h>
-#include <app/util/config.h>
 #include <mode-select-delegates.h>
 
 using namespace chip::app::Clusters;
@@ -57,33 +56,40 @@ void ModeSelectDelegate::HandleChangeToModeWitheStatus(uint8_t mode, Commands::C
     }
 }
 
-chip::CharSpan ModeSelectDelegate::getModeLabelByIndex(uint8_t modeIndex, bool &found)
+CHIP_ERROR ModeSelectDelegate::getModeLabelByIndex(uint8_t modeIndex, chip::MutableCharSpan &label)
 {
     if (modeIndex < NumberOfModes()) {
-        found = true;
-        return modeOptions[modeIndex].label;
+        if (label.size() >= modeOptions[modeIndex].label.size())
+        {
+            CopyCharSpanToMutableCharSpan(modeOptions[modeIndex].label, label);
+            return CHIP_NO_ERROR;
+        }
+        return CHIP_ERROR_INVALID_ARGUMENT;
     }
-    return Delegate::getModeLabelByIndex(modeIndex, found);
+    return CHIP_ERROR_NOT_FOUND;
 }
 
-uint8_t ModeSelectDelegate::getModeValueByIndex(uint8_t modeIndex, bool &found)
+CHIP_ERROR ModeSelectDelegate::getModeValueByIndex(uint8_t modeIndex, uint8_t &value)
 {
     if (modeIndex < NumberOfModes()) {
-        found = true;
-        return modeOptions[modeIndex].mode;
+        value = modeOptions[modeIndex].mode;
+        return CHIP_NO_ERROR;
     }
-    return Delegate::getModeValueByIndex(modeIndex, found);
+    return CHIP_ERROR_NOT_FOUND;
 }
 
-List<const SemanticTagStructType> ModeSelectDelegate::getModeTagsByIndex(uint8_t modeIndex, bool &found)
+CHIP_ERROR ModeSelectDelegate::getModeTagsByIndex(uint8_t modeIndex, List<const SemanticTagStructType> &tags)
 {
     if (modeIndex < NumberOfModes()) {
-        found = true;
-        return modeOptions[modeIndex].semanticTags;
+        if (tags.size() >= modeOptions[modeIndex].semanticTags.size())
+        {
+            tags = modeOptions[modeIndex].semanticTags;
+            return CHIP_NO_ERROR;
+        }
+        return CHIP_ERROR_INVALID_ARGUMENT;
     }
-    return  Delegate::getModeTagsByIndex(modeIndex, found);
+    return CHIP_ERROR_NOT_FOUND;
 }
-
 
 
 ////-- RVC Run delegate functions

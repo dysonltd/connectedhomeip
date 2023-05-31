@@ -69,16 +69,6 @@ public:
     bool IsSupportedMode(uint8_t mode);
 
     /**
-     * If the modeValue given is supported, this function will update modeOption to the ModeOptionStructType for the mode with
-     * the matching value and returns true. If the mode value given is not supported, the modeOption remains untouched and
-     * returns false.
-     * @param modeValue The `Mode` value of the mode to be returned.
-     * @param modeOption A reference to the structure to be modified with the mode information.
-     * @return true if the function was successful, false otherwise.
-     */
-    ModeOptionStructType GetModeByValue(uint16_t modeValue, bool &found);
-
-    /**
      * When a ChangeToMode command is received, if the NewMode value is a supported made, this function is called to decide if we
      * should go ahead with transitioning to this mode. If this function returns a success status, the change request is accepted
      * and the CurrentMode is set to the NewMode. Else, the CurrentMode is left untouched and the returned status in added to the
@@ -105,20 +95,12 @@ public:
     virtual ~Delegate() = default;
 
     /**
-     * Get the mode option structure of the Nth mode in the list of modes. This is mostly useful for SDK code.
-     * @param modeIndex The index in the list of modes of the mode to be returned.
-     * @param found is set to true if a mode is found. If set to false, the return should be ignored.
-     * @return a ModeOptionStruct containing a copy of the mode information.
-     */
-    ModeOptionStructType getModeByIndex(uint8_t modeIndex, bool &found);
-
-    /**
      * Get the mode label of the Nth mode in the list of modes. This is mostly useful for SDK code.
      * @param modeIndex The index in the list of modes of the mode to be returned.
      * @param found is set to true if a mode is found. If set to false, the return should be ignored.
      * @return the mode label of the mode at modeIndex.
      */
-    virtual CharSpan getModeLabelByIndex(uint8_t modeIndex, bool &found);
+    virtual CHIP_ERROR getModeLabelByIndex(uint8_t modeIndex, MutableCharSpan &label);
 
     /**
      * Get the mode value of the Nth mode in the list of modes. This is mostly useful for SDK code.
@@ -126,7 +108,7 @@ public:
      * @param found is set to true if a mode is found. If set to false, the return should be ignored.
      * @return the mode value of the mode at modeIndex.
      */
-    virtual uint8_t getModeValueByIndex(uint8_t modeIndex, bool &found);
+    virtual CHIP_ERROR getModeValueByIndex(uint8_t modeIndex, uint8_t &value);
 
     /**
      * Get the mode tags of the Nth mode in the list of modes. This is mostly useful for SDK code.
@@ -134,8 +116,7 @@ public:
      * @param found is set to true if a mode is found. If set to false, the return should be ignored.
      * @return a list of the mode tags of the mode at modeIndex.
      */
-    virtual List<const SemanticTagStructType> getModeTagsByIndex(uint8_t modeIndex, bool &found);
-
+    virtual CHIP_ERROR getModeTagsByIndex(uint8_t modeIndex, List<const SemanticTagStructType> &tags);
 };
 
 } // namespace ModeSelect
