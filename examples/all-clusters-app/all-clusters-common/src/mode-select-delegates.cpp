@@ -78,12 +78,14 @@ CHIP_ERROR ModeSelectDelegate::getModeValueByIndex(uint8_t modeIndex, uint8_t &v
     return CHIP_ERROR_NOT_FOUND;
 }
 
-CHIP_ERROR ModeSelectDelegate::getModeTagsByIndex(uint8_t modeIndex, List<const SemanticTagStructType> &tags)
+CHIP_ERROR ModeSelectDelegate::getModeTagsByIndex(uint8_t modeIndex, const List<SemanticTagStructType> &tags, size_t &size)
 {
     if (modeIndex < NumberOfModes()) {
         if (tags.size() >= modeOptions[modeIndex].semanticTags.size())
         {
-            tags = modeOptions[modeIndex].semanticTags;
+            std::copy(modeOptions[modeIndex].semanticTags.begin(), modeOptions[modeIndex].semanticTags.end(), tags.begin());
+            size = modeOptions[modeIndex].semanticTags.size();
+
             return CHIP_NO_ERROR;
         }
         return CHIP_ERROR_INVALID_ARGUMENT;

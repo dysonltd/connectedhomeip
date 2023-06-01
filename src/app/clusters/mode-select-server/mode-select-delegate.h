@@ -116,7 +116,7 @@ public:
      * @param found is set to true if a mode is found. If set to false, the return should be ignored.
      * @return a list of the mode tags of the mode at modeIndex.
      */
-    virtual CHIP_ERROR getModeTagsByIndex(uint8_t modeIndex, List<const SemanticTagStructType> &tags);
+    virtual CHIP_ERROR getModeTagsByIndex(uint8_t modeIndex, const List<SemanticTagStructType> &tags, size_t &size);
 };
 
 } // namespace ModeSelect
