@@ -51,7 +51,7 @@ CHIP_ERROR Delegate::getModeValueByIndex(uint8_t modeIndex, uint8_t &value)
     return CHIP_ERROR_NOT_IMPLEMENTED;
 }
 
-CHIP_ERROR Delegate::getModeTagsByIndex(uint8_t modeIndex, const List<SemanticTagStructType> &tags, size_t &size)
+CHIP_ERROR Delegate::getModeTagsByIndex(uint8_t modeIndex, List<SemanticTagStructType> &tags)
 {
     return CHIP_ERROR_NOT_IMPLEMENTED;
 }

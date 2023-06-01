@@ -440,14 +440,12 @@ CHIP_ERROR Instance::Read(const ConcreteReadAttributePath & aPath, AttributeValu
                 }
 
                 // Get the mode tags
-                size_t size;
                 SemanticTagStructType tagsBuffer[8];
                 List<SemanticTagStructType> tags(tagsBuffer);
-                err1 = d->getModeTagsByIndex(i, tags, size);
+                err1 = d->getModeTagsByIndex(i, tags);
                 if (err1 != CHIP_NO_ERROR) {
                     return err1;
                 }
-                tags.reduce_size(size);
                 mode.semanticTags = tags;
 
                 ReturnErrorOnFailure(encoder.Encode(mode));

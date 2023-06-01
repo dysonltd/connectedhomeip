@@ -97,7 +97,7 @@ private:
     uint8_t NumberOfModes() override {return 3;};
     CHIP_ERROR getModeLabelByIndex(uint8_t modeIndex, chip::MutableCharSpan &label) override;
     CHIP_ERROR getModeValueByIndex(uint8_t modeIndex, uint8_t &value) override;
-    CHIP_ERROR getModeTagsByIndex(uint8_t modeIndex, const List<SemanticTagStructType> &tags, size_t &size) override;
+    CHIP_ERROR getModeTagsByIndex(uint8_t modeIndex, List<SemanticTagStructType> &tags) override;
 
 public:
     ModeSelectDelegate() = default;

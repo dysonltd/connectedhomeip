@@ -112,11 +112,15 @@ public:
 
     /**
      * Get the mode tags of the Nth mode in the list of modes. This is mostly useful for SDK code.
+     * NOTE! It is the responsibility of the implementer to ensure that the returned list points
+     * to valid memory and is of the correct size. Hint, you can use `std::copy` to copy the values
+     * into tags and the List's `reduce_size()` function to adjust the size of tags to match the
+     * number of made tags.
      * @param modeIndex The index in the list of modes of the mode to be returned.
      * @param found is set to true if a mode is found. If set to false, the return should be ignored.
      * @return a list of the mode tags of the mode at modeIndex.
      */
-    virtual CHIP_ERROR getModeTagsByIndex(uint8_t modeIndex, const List<SemanticTagStructType> &tags, size_t &size);
+    virtual CHIP_ERROR getModeTagsByIndex(uint8_t modeIndex, List<SemanticTagStructType> &tags);
 };
 
 } // namespace ModeSelect
