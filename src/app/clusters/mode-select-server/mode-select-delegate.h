@@ -112,10 +112,10 @@ public:
 
     /**
      * Get the mode tags of the Nth mode in the list of modes. This is mostly useful for SDK code.
-     * NOTE! It is the responsibility of the implementer to ensure that the returned list points
-     * to valid memory and is of the correct size. Hint, you can use `std::copy` to copy the values
-     * into tags and the List's `reduce_size()` function to adjust the size of tags to match the
-     * number of made tags.
+     * The caller must make sure the List points to an existing buffer of sufficient size to hold the spec-required number of tags, and the size of the List is the size of the buffer.
+     * 
+     * The implementation must place its desired SemanticTagStructType instances in that buffer and call reduce_size
+     * on the list to indicate how many entries were initialized.
      * @param modeIndex The index in the list of modes of the mode to be returned.
      * @param found is set to true if a mode is found. If set to false, the return should be ignored.
      * @return a list of the mode tags of the mode at modeIndex.
