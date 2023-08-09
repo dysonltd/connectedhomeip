@@ -98,13 +98,13 @@ public:
      * Get current phase.
      * @return The current phase.
      */
-    app::DataModel::Nullable<uint8_t> GetCurrentPhase();
+    app::DataModel::Nullable<uint8_t> GetCurrentPhase() const;
 
     /**
      * Get countdown time.
      * @return The current countdown time.
      */
-    app::DataModel::Nullable<uint32_t> GetCountdownTime();
+    app::DataModel::Nullable<uint32_t> GetCountdownTime() const;
 
     /**
      * Get the current operational state.
@@ -116,7 +116,7 @@ public:
      * Get current operational error.
      * @param error The GenericOperationalError to fill with the current operational error value
      */
-    void GetCurrentOperationalError(GenericOperationalError & error);
+    void GetCurrentOperationalError(GenericOperationalError & error) const;
 
     // Event triggers
     /**
