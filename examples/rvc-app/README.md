@@ -98,8 +98,11 @@ transition to mode 0", do nothing.
 
 #### TC 3.2
 
-This is not applicable because this RVC device does not support the
-`StartUpMode` attribute.
+PIXIT: `PIXIT_ENDPOINT:1`  
+Example command:
+`./scripts/tests/run_python_test.py --script src/python_testing/TC_RVCRUNM_3_2.py --script-args "--storage-path admin_storage.json --PICS examples/rvc-app/rvc-common/pics/RVC_App_Test_Plan.txt --int-arg PIXIT_ENDPOINT:1"`
+
+When asked "Physically power cycle the device", do so.
 
 ### RVC Operational State cluster
 
