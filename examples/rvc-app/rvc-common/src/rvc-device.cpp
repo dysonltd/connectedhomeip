@@ -7,6 +7,16 @@ void RvcDevice::Init()
     mRunModeInstance.Init();
     mCleanModeInstance.Init();
     mOperationalStateInstance.Init();
+
+    // If we happen to not be in the idle mode after the initialisation of the RvcRunMode cluster,
+    // this means that we must be in the Running state.
+    uint8_t currentMode  = mRunModeInstance.GetCurrentMode();
+    if (currentMode != RvcRunMode::ModeIdle)
+    {
+        mCharging = false;
+        mDocked   = false;
+        mOperationalStateInstance.SetOperationalState(to_underlying(OperationalState::OperationalStateEnum::kRunning));
+    }
 }
 
 void RvcDevice::SetDeviceToIdleState()
