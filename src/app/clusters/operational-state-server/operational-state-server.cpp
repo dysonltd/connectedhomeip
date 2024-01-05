@@ -181,7 +181,7 @@ void Instance::ReportPhaseListChange()
 bool Instance::IsSupportedPhase(uint8_t aPhase)
 {
     GenericOperationalPhase phase = GenericOperationalPhase(DataModel::Nullable<CharSpan>());
-    if (mDelegate->GetOperationalPhaseAtIndex(aPhase, phase) != CHIP_ERROR_NOT_FOUND)
+    if (GetDelegate()->GetOperationalPhaseAtIndex(aPhase, phase) != CHIP_ERROR_NOT_FOUND)
     {
         return true;
     }
@@ -191,7 +191,7 @@ bool Instance::IsSupportedPhase(uint8_t aPhase)
 bool Instance::IsSupportedOperationalState(uint8_t aState)
 {
     GenericOperationalState opState;
-    for (uint8_t i = 0; mDelegate->GetOperationalStateAtIndex(i, opState) != CHIP_ERROR_NOT_FOUND; i++)
+    for (uint8_t i = 0; GetDelegate()->GetOperationalStateAtIndex(i, opState) != CHIP_ERROR_NOT_FOUND; i++)
     {
         if (opState.operationalStateID == aState)
         {
@@ -278,7 +278,7 @@ CHIP_ERROR Instance::Read(const ConcreteReadAttributePath & aPath, AttributeValu
     switch (aPath.mAttributeId)
     {
     case OperationalState::Attributes::OperationalStateList::Id: {
-        return aEncoder.EncodeList([delegate = mDelegate](const auto & encoder) -> CHIP_ERROR {
+        return aEncoder.EncodeList([delegate = GetDelegate()](const auto & encoder) -> CHIP_ERROR {
             GenericOperationalState opState;
             size_t index   = 0;
             CHIP_ERROR err = CHIP_NO_ERROR;
@@ -311,12 +311,12 @@ CHIP_ERROR Instance::Read(const ConcreteReadAttributePath & aPath, AttributeValu
         GenericOperationalPhase phase = GenericOperationalPhase(DataModel::Nullable<CharSpan>());
         size_t index                  = 0;
 
-        if (mDelegate->GetOperationalPhaseAtIndex(index, phase) == CHIP_ERROR_NOT_FOUND || phase.IsMissing())
+        if (GetDelegate()->GetOperationalPhaseAtIndex(index, phase) == CHIP_ERROR_NOT_FOUND || phase.IsMissing())
         {
             return aEncoder.EncodeNull();
         }
         return aEncoder.EncodeList([&](const auto & encoder) -> CHIP_ERROR {
-            while (this->mDelegate->GetOperationalPhaseAtIndex(index, phase) != CHIP_ERROR_NOT_FOUND)
+            while (this->GetDelegate()->GetOperationalPhaseAtIndex(index, phase) != CHIP_ERROR_NOT_FOUND)
             {
                 ReturnErrorOnFailure(encoder.Encode(phase.mPhaseName));
                 index++;
@@ -332,7 +332,7 @@ CHIP_ERROR Instance::Read(const ConcreteReadAttributePath & aPath, AttributeValu
     break;
 
     case OperationalState::Attributes::CountdownTime::Id: {
-        ReturnErrorOnFailure(aEncoder.Encode(mDelegate->GetCountdownTime()));
+        ReturnErrorOnFailure(aEncoder.Encode(GetDelegate()->GetCountdownTime()));
     }
     break;
     }
@@ -365,7 +365,7 @@ void Instance::HandlePauseState(HandlerContext & ctx, const Commands::Pause::Dec
     // If the current state is Paused we can skip this call.
     if (err.errorStateID == 0 && opState != to_underlying(OperationalStateEnum::kPaused))
     {
-        mDelegate->HandlePauseStateCallback(err);
+        GetDelegate()->HandlePauseStateCallback(err);
     }
 
     Commands::OperationalCommandResponse::Type response;
@@ -383,7 +383,7 @@ void Instance::HandleStopState(HandlerContext & ctx, const Commands::Stop::Decod
 
     if (opState != to_underlying(OperationalStateEnum::kStopped))
     {
-        mDelegate->HandleStopStateCallback(err);
+        GetDelegate()->HandleStopStateCallback(err);
     }
 
     Commands::OperationalCommandResponse::Type response;
@@ -401,7 +401,7 @@ void Instance::HandleStartState(HandlerContext & ctx, const Commands::Start::Dec
 
     if (opState != to_underlying(OperationalStateEnum::kRunning))
     {
-        mDelegate->HandleStartStateCallback(err);
+        GetDelegate()->HandleStartStateCallback(err);
     }
 
     Commands::OperationalCommandResponse::Type response;
@@ -436,7 +436,7 @@ void Instance::HandleResumeState(HandlerContext & ctx, const Commands::Resume::D
     // If the current state is Running we can skip this call.
     if (err.errorStateID == 0 && opState != to_underlying(OperationalStateEnum::kRunning))
     {
-        mDelegate->HandleResumeStateCallback(err);
+        GetDelegate()->HandleResumeStateCallback(err);
     }
 
     Commands::OperationalCommandResponse::Type response;
@@ -488,7 +488,7 @@ void RvcOperationalState::Instance::HandleGoHomeCommand(HandlerContext & ctx, co
 
     if (err.errorStateID == 0 && opState != to_underlying(OperationalStateEnum::kSeekingCharger))
     {
-        mDelegate->HandleGoHomeCommandCallback(err);
+        GetDelegate()->HandleGoHomeCommandCallback(err);
     }
 
     Commands::OperationalCommandResponse::Type response;

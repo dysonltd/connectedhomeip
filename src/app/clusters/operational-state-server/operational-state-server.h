@@ -188,6 +188,12 @@ protected:
      */
     virtual void InvokeDerivedClusterCommand(HandlerContext & handlerContext) { return; };
 
+    /**
+     * Gets a pointer to the delegate.
+     * Note: If we create a BaseInstance class that is not itself a used cluster, this method can be made pure virtual.
+     */
+    virtual Delegate* GetDelegate() { return mDelegate; };
+
 private:
     Delegate * mDelegate;
 
@@ -375,6 +381,8 @@ protected:
      * @param handlerContext The command handler context containing information about the received command.
      */
     void InvokeDerivedClusterCommand(HandlerContext & handlerContext) override;
+
+    Delegate* GetDelegate() override { return mDelegate; };
 
 private:
     Delegate * mDelegate;
