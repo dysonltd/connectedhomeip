@@ -18,6 +18,7 @@
 import chip.clusters as Clusters
 from matter_testing_support import MatterBaseTest, async_test_body, default_matter_test_main
 from mobly import asserts
+from time import sleep
 
 
 class TC_RVCCLEANM_2_2(MatterBaseTest):
@@ -31,6 +32,8 @@ class TC_RVCCLEANM_2_2(MatterBaseTest):
         self.run_mode_dut = 0
         self.old_clean_mode_dut = 0
         self.new_clean_mode_th = 0
+        self.is_ci = False
+        self.app_pipe = "/tmp/chip_rvc_fifo_1823470"
 
     async def read_mod_attribute_expect_success(self, cluster, attribute):
         return await self.read_single_attribute_check_success(
@@ -48,8 +51,12 @@ class TC_RVCCLEANM_2_2(MatterBaseTest):
             Clusters.RvcCleanMode.Attributes.SupportedModes)
         return ret
 
-    async def send_change_to_mode_cmd(self, newMode) -> Clusters.Objects.RvcCleanMode.Commands.ChangeToModeResponse:
+    async def send_clean_change_to_mode_cmd(self, newMode) -> Clusters.Objects.RvcCleanMode.Commands.ChangeToModeResponse:
         ret = await self.send_single_cmd(cmd=Clusters.Objects.RvcCleanMode.Commands.ChangeToMode(newMode=newMode), endpoint=self.endpoint)
+        return ret
+
+    async def send_run_change_to_mode_cmd(self, newMode) -> Clusters.Objects.RvcRunMode.Commands.ChangeToModeResponse:
+        ret = await self.send_single_cmd(cmd=Clusters.Objects.RvcRunMode.Commands.ChangeToMode(newMode=newMode), endpoint=self.endpoint)
         return ret
 
     # Prints the instruction and waits for a user input to continue
@@ -60,9 +67,15 @@ class TC_RVCCLEANM_2_2(MatterBaseTest):
     def pics_TC_RVCCLEANM_2_2(self) -> list[str]:
         return ["RVCCLEANM.S"]
 
+    # Sends and out-of-band command to the rvc-app
+    def write_to_app_pipe(self, command):
+        with open(self.app_pipe, "w") as app_pipe:
+            app_pipe.write(command + "\n")
+
     @async_test_body
     async def test_TC_RVCCLEANM_2_2(self):
         self.endpoint = self.matter_test_config.endpoint
+        self.is_ci = self.check_pics("PICS_SDK_CI_ONLY")
 
         asserts.assert_true(self.check_pics("RVCCLEANM.S"), "RVCCLEANM.S must be supported")
         asserts.assert_true(self.check_pics("RVCRUNM.S.A0000"), "RVCRUNM.S.A0000 must be supported")
@@ -70,8 +83,15 @@ class TC_RVCCLEANM_2_2(MatterBaseTest):
 
         self.print_step(1, "Commissioning, already done")
 
-        self.print_instruction(2, "Manually put the device in a state in which the RVC Run Mode "
-                                  "cluster’s CurrentMode attribute is set to a mode without the Idle mode tag.")
+        self.print_step(2, "Manually put the device in a state in which the RVC Run Mode cluster’s CurrentMode attribute is set to a mode without the Idle mode tag.")
+        if self.is_ci:
+            self.write_to_app_pipe('{"Name": "ErrorEvent", "Error": "UnableToStartOrResume"}')
+            sleep(1)
+            self.write_to_app_pipe('{"Name": "ClearError"}')
+            sleep(1)
+            await self.send_run_change_to_mode_cmd(1)
+        else:
+            input("Press Enter when done.\n")
 
         self.print_step(3, "Read the RvcRunMode SupportedModes attribute")
         supported_run_modes = await self.read_run_supported_modes()
@@ -115,7 +135,7 @@ class TC_RVCCLEANM_2_2(MatterBaseTest):
                 break
 
         self.print_step(7, "Send ChangeToMode command")
-        response = await self.send_change_to_mode_cmd(self.new_clean_mode_th)
+        response = await self.send_clean_change_to_mode_cmd(self.new_clean_mode_th)
         asserts.assert_equal(response.status, 3,
                              "The response should contain a ChangeToModeResponse command "
                              "with the Status set to InvalidInMode(0x03).")
