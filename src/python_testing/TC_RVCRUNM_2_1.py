@@ -24,6 +24,7 @@ from mobly import asserts
 # This test requires several additional command line arguments
 # run with
 # --int-arg PIXIT.RVCRUNM.MODE_CHANGE_OK:<mode id> PIXIT.RVCRUNM.MODE_CHANGE_FAIL:<mode id>
+# For running in CI, it is expected that OK=0 and FAIL=2
 
 
 class TC_RVCRUNM_2_1(MatterBaseTest):
@@ -33,6 +34,7 @@ class TC_RVCRUNM_2_1(MatterBaseTest):
         self.endpoint = 0
         self.mode_ok = 0
         self.mode_fail = 0
+        self.is_ci = False
 
     async def read_mod_attribute_expect_success(self, endpoint, attribute):
         cluster = Clusters.Objects.RvcRunMode
@@ -60,6 +62,7 @@ class TC_RVCRUNM_2_1(MatterBaseTest):
         self.endpoint = self.matter_test_config.endpoint
         self.mode_ok = self.matter_test_config.global_test_params['PIXIT.RVCRUNM.MODE_CHANGE_OK']
         self.mode_fail = self.matter_test_config.global_test_params['PIXIT.RVCRUNM.MODE_CHANGE_FAIL']
+        self.is_ci = self.check_pics("PICS_SDK_CI_ONLY")
 
         asserts.assert_true(self.check_pics("RVCRUNM.S.A0000"), "RVCRUNM.S.A0000 must be supported")
         asserts.assert_true(self.check_pics("RVCRUNM.S.A0001"), "RVCRUNM.S.A0001 must be supported")
@@ -107,7 +110,11 @@ class TC_RVCRUNM_2_1(MatterBaseTest):
             asserts.assert_true(self.mode_fail in modes,
                                 "The MODE_CHANGE_FAIL PIXIT value (%d) is not a supported mode" % (self.mode_fail))
             self.print_step(5, "Manually put the device in a state from which it will FAIL to transition to mode %d" % (self.mode_fail))
-            input("Press Enter when done.\n")
+            if self.is_ci:
+                print("Change to RVC Run mode Cleaning")
+                await self.send_change_to_mode_cmd(newMode=1)
+            else:
+                input("Press Enter when done.\n")
 
             self.print_step(6, "Read CurrentMode attribute")
             old_current_mode = await self.read_mod_attribute_expect_success(endpoint=self.endpoint, attribute=attributes.CurrentMode)
@@ -134,7 +141,10 @@ class TC_RVCRUNM_2_1(MatterBaseTest):
             asserts.assert_true(current_mode == old_current_mode, "CurrentMode changed after failed ChangeToMode command!")
 
         self.print_step(9, "Manually put the device in a state from which it will SUCCESSFULLY transition to mode %d" % (self.mode_ok))
-        input("Press Enter when done.\n")
+        if self.is_ci:
+            print("Continuing...")
+        else:
+            input("Press Enter when done.\n")
 
         self.print_step(10, "Read CurrentMode attribute")
         old_current_mode = await self.read_mod_attribute_expect_success(endpoint=self.endpoint, attribute=attributes.CurrentMode)
