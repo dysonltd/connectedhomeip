@@ -72,3 +72,137 @@ bool RvcServiceAreaDelegate::HandleSkipCurrentLocation(std::string & skipStatusT
 
     return ret_value;
 };
+
+
+
+//*************************************************************************
+// Supported Locations accessors
+
+void RvcServiceAreaDelegate::ReloadSupportedLocationsVector()
+{
+    mSupportedLocationsByIndex.resize(mSupportedLocationsById.size());
+
+    uint32_t locationIndex = 0;
+    for (auto & entry : mSupportedLocationsById)
+    {
+        mSupportedLocationsByIndex[locationIndex++] = &entry.second;
+    }
+}
+
+size_t RvcServiceAreaDelegate::GetNumberOfSupportedLocations() 
+{
+    return mSupportedLocationsByIndex.size();
+}
+
+bool RvcServiceAreaDelegate::RvcServiceAreaDelegate::GetSupportedLocationByIndex(uint32_t listIndex, const LocationStructureWrapper *& supportedLocation) 
+{
+    bool ret_value = false;
+
+    if (listIndex < mSupportedLocationsByIndex.size())
+    {
+        supportedLocation = mSupportedLocationsByIndex[listIndex];
+        ret_value = true;
+    }
+
+    return ret_value;
+};
+
+bool RvcServiceAreaDelegate::GetSupportedLocationById(uint32_t aLocationId, const LocationStructureWrapper *& supportedLocation)
+{
+    bool ret_value = false;
+
+    auto locationIter = mSupportedLocationsById.find(aLocationId);
+
+    if (locationIter != mSupportedLocationsById.end())
+    {
+        supportedLocation = &locationIter->second;
+        ret_value = true;
+    }
+
+    return ret_value;
+}
+
+bool RvcServiceAreaDelegate::GetWritableSupportedLocationById(uint32_t aLocationId, LocationStructureWrapper *& supportedLocation)
+{
+    bool ret_value = false;
+
+    auto locationIter = mSupportedLocationsById.find(aLocationId);
+
+    if (locationIter != mSupportedLocationsById.end())
+    {
+        supportedLocation = &locationIter->second;
+        ret_value = true;
+    }
+
+    return ret_value;
+}
+
+bool RvcServiceAreaDelegate::IsSupportedLocation(uint32_t aLocationId)
+{
+    const LocationStructureWrapper *supportedLocation;
+
+    return GetSupportedLocationById(aLocationId, supportedLocation);
+}
+
+
+bool RvcServiceAreaDelegate::AddSupportedLocation(const LocationStructureWrapper & supportedLocation) 
+{
+    bool ret_value = false;
+
+    auto result = mSupportedLocationsById.insert(SupportedLocationPairType(supportedLocation.locationId, supportedLocation));
+
+    if (result.second)
+    {
+        // insertion successful - reload the vector aliases
+        ReloadSupportedLocationsVector();
+        ret_value = true;
+    }
+
+    return ret_value;
+}
+
+uint32_t RvcServiceAreaDelegate::RemoveSupportedLocationByIndex(uint32_t locationIndex)
+{
+    if (locationIndex < mSupportedLocationsByIndex.size())
+    {
+        uint32_t locationId = mSupportedLocationsByIndex[locationIndex]->locationId;
+
+        // erase from the map - remaining references from within the vector are still valid
+        mSupportedLocationsById.erase(locationId);
+
+        // erase from vector- incurs vector re-allocate and copy
+        mSupportedLocationsByIndex.erase(mSupportedLocationsByIndex.begin() + locationIndex);
+    }
+
+    // for this a vector implementation, vector index does not change on delete - now points to next element
+    return locationIndex;  
+}
+
+bool RvcServiceAreaDelegate::RemoveSupportedLocationById(uint32_t aLocationId)
+{
+    bool ret_value = false;
+
+    if (mSupportedLocationsById.erase(aLocationId) != 0)
+    {
+        // insertion successful - reload the vector aliases
+        // - incurs vector re-allocate, map iterate, pointer copy
+        ReloadSupportedLocationsVector();
+        ret_value = true;       
+    }
+
+    return ret_value;
+}
+
+bool RvcServiceAreaDelegate::ClearSupportedLocations()
+{
+    bool ret_value = false;
+
+    if (mSupportedLocationsById.size() > 0)
+    {
+        mSupportedLocationsById.clear();
+        mSupportedLocationsByIndex.clear();
+        ret_value = true;
+    }
+
+    return ret_value;
+}

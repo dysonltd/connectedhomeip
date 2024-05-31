@@ -184,13 +184,24 @@ void Instance::InvokeCommand(HandlerContext & handlerContext)
 
 CHIP_ERROR Instance::ReadSupportedLocations(chip::app::AttributeValueEncoder & aEncoder)
 {
-    return aEncoder.EncodeList([this](const auto & encoder) -> CHIP_ERROR {
-        for (auto & entry : mSupportedLocations)
+    if (mDelegate->GetNumberOfSupportedLocations() == 0)
+    {
+        return aEncoder.EncodeNull();
+    }
+    else
+    {
+        return aEncoder.EncodeList([this](const auto & encoder) -> CHIP_ERROR 
         {
-            ReturnErrorOnFailure(encoder.Encode(entry.second));
-        }
-        return CHIP_NO_ERROR;
-    });
+            uint8_t                          locationIndex = 0;
+            const LocationStructureWrapper * suppportedLocation;
+
+            while (GetSupportedLocationByIndex(locationIndex++, suppportedLocation))
+            {
+                ReturnErrorOnFailure(encoder.Encode(*suppportedLocation));
+            }
+            return CHIP_NO_ERROR; 
+        });
+    }
 }
 
 CHIP_ERROR Instance::ReadSupportedMaps(chip::app::AttributeValueEncoder & aEncoder) 
@@ -468,37 +479,23 @@ void Instance::NotifyProgressChanged()
 // ****************************************************************************
 //  Supported Locations manipulators
 
-void  Instance::GetSupportedLocationIds(std::vector<uint32_t> & aSupportedLocationIds)
+bool Instance::GetSupportedLocationByIndex(uint32_t aLocationId, const LocationStructureWrapper *& aSupportedLocation)
 {
-    aSupportedLocationIds.reserve(mSupportedLocations.size());
-
-    for (SupportedLocationPairType & entry : mSupportedLocations)
-    {
-        aSupportedLocationIds.push_back(entry.second.locationId);
-    }
+    // wrap the delegate function
+    return mDelegate->GetSupportedLocationById(aLocationId, aSupportedLocation);
 }
 
-bool Instance::GetSupportedLocationById(uint32_t aLocationId, const LocationStructureWrapper*& aSupportedLocation)
+bool Instance::GetSupportedLocationById(uint32_t aLocationId, const LocationStructureWrapper *& aSupportedLocation)
 {
-    bool ret_value = false;
-
-    auto locationIter = mSupportedLocations.find(aLocationId);
-
-    if (locationIter != mSupportedLocations.end())
-    {
-        aSupportedLocation = &locationIter->second;
-        ret_value = true;
-    }
-
-    return ret_value;
+    // wrap the delegate function
+    return mDelegate->GetSupportedLocationById(aLocationId, aSupportedLocation);
 }
 
 bool Instance::IsSupportedLocation(uint32_t aLocationId)
 {
-    auto locationIter = mSupportedLocations.find(aLocationId);
-    return (locationIter != mSupportedLocations.end());
+    // wrap the delegate function
+    return mDelegate->IsSupportedLocation(aLocationId);
 }
-
 
 bool Instance::IsValidSupportedLocation(const LocationStructureWrapper & aLocation)
 {
@@ -558,12 +555,15 @@ bool Instance::IsUniqueSupportedLocation(const LocationStructureWrapper & aLocat
     // If the SupportedMaps attribute is null, each entry in this list SHALL have a unique value for the LocationInfo field.
 
     // validate that the location is unique with regard to the supported locations list
-    for (auto & entry : mSupportedLocations)
+    uint8_t                          locationIndex = 0;
+    const LocationStructureWrapper * suppportedLocation;
+
+    while (GetSupportedLocationByIndex(locationIndex++, suppportedLocation))
     {
         // this function may be used for uniqueness checking of a location that is a member of supported locations, (for validating modifications)
         // so do not test it against itself.
         // skip location if locationId's match
-        if (aLocation.locationId == entry.second.locationId)
+        if (aLocation.locationId == suppportedLocation->locationId)
         {
             continue;
         }
@@ -572,23 +572,23 @@ bool Instance::IsUniqueSupportedLocation(const LocationStructureWrapper & aLocat
         // if mapId is not null, skip locations with null mapId's
         // if mapId is null, skip locations with non-null mapId's
         // if both location's mapId are not null, skip locations with non matching mapId's
-        if ((aLocation.mapId.IsNull() != (entry.second.mapId.IsNull()))  ||
+        if ((aLocation.mapId.IsNull() != (suppportedLocation->mapId.IsNull()))  ||
 
-            (!aLocation.mapId.IsNull() && (!entry.second.mapId.IsNull()) && (aLocation.mapId.Value() != entry.second.mapId.Value())))
+            (!aLocation.mapId.IsNull() && (!suppportedLocation->mapId.IsNull()) && (aLocation.mapId.Value() != suppportedLocation->mapId.Value())))
         {
             continue;
         }
 
         // check for null vs non-null HomeLocationInfo
-        if (aLocation.locationInfo.homeLocationInfo.IsNull() != (entry.second.locationInfo.homeLocationInfo.IsNull()))
+        if (aLocation.locationInfo.homeLocationInfo.IsNull() != (suppportedLocation->locationInfo.homeLocationInfo.IsNull()))
         {
              continue;
         }
 
         // if both locations have non-null HomeLocationInfo, check fields
-        if (!aLocation.locationInfo.homeLocationInfo.IsNull() && (!entry.second.locationInfo.homeLocationInfo.IsNull()))
+        if (!aLocation.locationInfo.homeLocationInfo.IsNull() && (!suppportedLocation->locationInfo.homeLocationInfo.IsNull()))
         {
-            if (!aLocation.DoesNameMatch(entry.second.locationInfo.homeLocationInfo.Value().locationName))
+            if (!aLocation.DoesNameMatch(suppportedLocation->locationInfo.homeLocationInfo.Value().locationName))
             {
                 continue;
             }
@@ -598,10 +598,10 @@ bool Instance::IsUniqueSupportedLocation(const LocationStructureWrapper & aLocat
             // if FloorNumber is not null, skip locations with null FloorNumber's
             // if FloorNumber is null, skip locations with non-null FloorNumber's
             // if both location's FloorNumber are not null, skip locations with non matching FloorNumber's
-            if ((aLocation.locationInfo.homeLocationInfo.Value().floorNumber.IsNull() != entry.second.locationInfo.homeLocationInfo.Value().floorNumber.IsNull()) ||
+            if ((aLocation.locationInfo.homeLocationInfo.Value().floorNumber.IsNull() != suppportedLocation->locationInfo.homeLocationInfo.Value().floorNumber.IsNull()) ||
 
-                ((!aLocation.locationInfo.homeLocationInfo.Value().floorNumber.IsNull() && !entry.second.locationInfo.homeLocationInfo.Value().floorNumber.IsNull()) 
-                    && (aLocation.locationInfo.homeLocationInfo.Value().floorNumber.Value() != entry.second.locationInfo.homeLocationInfo.Value().floorNumber.Value()))  )
+                ((!aLocation.locationInfo.homeLocationInfo.Value().floorNumber.IsNull() && !suppportedLocation->locationInfo.homeLocationInfo.Value().floorNumber.IsNull()) 
+                    && (aLocation.locationInfo.homeLocationInfo.Value().floorNumber.Value() != suppportedLocation->locationInfo.homeLocationInfo.Value().floorNumber.Value()))  )
             {
                 continue;
             }
@@ -611,10 +611,10 @@ bool Instance::IsUniqueSupportedLocation(const LocationStructureWrapper & aLocat
             // if AreaType is not null, skip locations with null AreaType's
             // if AreaType is null, skip locations with non-null AreaType's
             // if both location's AreaType are not null, skip locations with non matching AreaType's
-            if ((aLocation.locationInfo.homeLocationInfo.Value().areaType.IsNull() != entry.second.locationInfo.homeLocationInfo.Value().areaType.IsNull()) ||
+            if ((aLocation.locationInfo.homeLocationInfo.Value().areaType.IsNull() != suppportedLocation->locationInfo.homeLocationInfo.Value().areaType.IsNull()) ||
 
-                ((!aLocation.locationInfo.homeLocationInfo.Value().areaType.IsNull() && !entry.second.locationInfo.homeLocationInfo.Value().areaType.IsNull()) 
-                    && (aLocation.locationInfo.homeLocationInfo.Value().areaType.Value() != entry.second.locationInfo.homeLocationInfo.Value().areaType.Value()))  )
+                ((!aLocation.locationInfo.homeLocationInfo.Value().areaType.IsNull() && !suppportedLocation->locationInfo.homeLocationInfo.Value().areaType.IsNull()) 
+                    && (aLocation.locationInfo.homeLocationInfo.Value().areaType.Value() != suppportedLocation->locationInfo.homeLocationInfo.Value().areaType.Value()))  )
             {
                 continue;
             }
@@ -624,10 +624,10 @@ bool Instance::IsUniqueSupportedLocation(const LocationStructureWrapper & aLocat
         // if landmarkTag is not null, skip locations with null landmarkTag's
         // if landmarkTag is null, skip locations with non-null landmarkTag's
         // if both location's landmarkTag are not null, skip locations with non matching landmarkTag's
-        if ((aLocation.locationInfo.landmarkTag.IsNull() != entry.second.locationInfo.landmarkTag.IsNull()) ||
+        if ((aLocation.locationInfo.landmarkTag.IsNull() != suppportedLocation->locationInfo.landmarkTag.IsNull()) ||
 
-            ((!aLocation.locationInfo.landmarkTag.IsNull() && !entry.second.locationInfo.landmarkTag.IsNull()) 
-                && (aLocation.locationInfo.landmarkTag.Value() != entry.second.locationInfo.landmarkTag.Value()))  )
+            ((!aLocation.locationInfo.landmarkTag.IsNull() && !suppportedLocation->locationInfo.landmarkTag.IsNull()) 
+                && (aLocation.locationInfo.landmarkTag.Value() != suppportedLocation->locationInfo.landmarkTag.Value()))  )
         {
             continue;
         }
@@ -636,10 +636,10 @@ bool Instance::IsUniqueSupportedLocation(const LocationStructureWrapper & aLocat
         // if positionTag is not null, skip locations with null positionTag's
         // if positionTag is null, skip locations with non-null positionTag's
         // if both location's positionTag are not null, skip locations with non matching positionTag's
-        if ((aLocation.locationInfo.positionTag.IsNull() != entry.second.locationInfo.positionTag.IsNull())  ||
+        if ((aLocation.locationInfo.positionTag.IsNull() != suppportedLocation->locationInfo.positionTag.IsNull())  ||
 
-            ((!aLocation.locationInfo.positionTag.IsNull() && !entry.second.locationInfo.positionTag.IsNull()  
-                && (aLocation.locationInfo.positionTag.Value() != entry.second.locationInfo.positionTag.Value())))  )
+            ((!aLocation.locationInfo.positionTag.IsNull() && !suppportedLocation->locationInfo.positionTag.IsNull()  
+                && (aLocation.locationInfo.positionTag.Value() != suppportedLocation->locationInfo.positionTag.Value())))  )
         {
             continue;
         }
@@ -648,10 +648,10 @@ bool Instance::IsUniqueSupportedLocation(const LocationStructureWrapper & aLocat
         // if surfaceTag is not null, skip locations with null surfaceTag's
         // if surfaceTag is null, skip locations with non-null surfaceTag's
         // if both location's surfaceTag are not null, skip locations with non matching surfaceTag's
-        if ((aLocation.locationInfo.surfaceTag.IsNull() != entry.second.locationInfo.surfaceTag.IsNull())  ||
+        if ((aLocation.locationInfo.surfaceTag.IsNull() != suppportedLocation->locationInfo.surfaceTag.IsNull())  ||
 
-            ((!aLocation.locationInfo.surfaceTag.IsNull() && !entry.second.locationInfo.surfaceTag.IsNull()  
-                && (aLocation.locationInfo.surfaceTag.Value() != entry.second.locationInfo.surfaceTag.Value())))  )
+            ((!aLocation.locationInfo.surfaceTag.IsNull() && !suppportedLocation->locationInfo.surfaceTag.IsNull()  
+                && (aLocation.locationInfo.surfaceTag.Value() != suppportedLocation->locationInfo.surfaceTag.Value())))  )
         {
             continue;
         }
@@ -684,7 +684,7 @@ bool Instance::AddSupportedLocation( uint32_t                                   
                                             aLandmarkTag, aPositionTag, aSurfaceTag);
 
     // check max# of list entries
-    VerifyOrExit((kMaxNumSupportedLocations > mSupportedLocations.size()),
+    VerifyOrExit((kMaxNumSupportedLocations > mDelegate->GetNumberOfSupportedLocations()),
                 ChipLogError(Zcl,  "AddSupportedLocation %u - to many entries", aLocationId));
 
 
@@ -698,13 +698,15 @@ bool Instance::AddSupportedLocation( uint32_t                                   
 
 
     {
-        // validated - add to list
-        auto result = mSupportedLocations.emplace( SupportedLocationPairType(aLocationId, aNewLocation));
-
+        // add to supported locations attribute
         // Each entry in Supported Locations SHALL have a unique value for the ID field.
-        // (successful insertion in map)
-        VerifyOrExit((result.second),
-            ChipLogError(Zcl,  "AddSupportedLocation - non-unique location Id %u", aLocationId));
+        // delegate is reponsible for verifying the uniqueness of the locationId.
+        // It's possible some devices may not have enough memory available for maximum location list.
+        // On a failure, the delegate function should log an error
+        CharSpan resultText;
+        uint32_t result = mDelegate->AddSupportedLocation(aNewLocation);
+
+        VerifyOrExit(result, );       
     }
 
     // success!
@@ -728,34 +730,38 @@ bool Instance::ModifySupportedLocation( uint32_t                                
 {
     bool ret_value = false;
 
-    // find existing supported location to modify
-    auto locationIter = mSupportedLocations.find(aLocationId);
-    
-    // create location object for validation
-    LocationStructureWrapper aNewLocation(  aLocationId, aMapId,
-                                            aLocationName, aFloorNumber, aAreaType, 
-                                            aLandmarkTag, aPositionTag, aSurfaceTag);
+    // get existing supported location to modify
+    LocationStructureWrapper* locationInSupportedLocations = nullptr;
 
-    VerifyOrExit((locationIter != mSupportedLocations.end()),
-                ChipLogError(Zcl,  "ModifySupportedLocation %u - not a supported locationId", aNewLocation.locationId));
+    // The code needs write access to the object, so we'll use the delegate call directly.
+    bool locationExists = mDelegate->GetWritableSupportedLocationById(aLocationId, locationInSupportedLocations);
 
-    // verify cluster requirements concerning valid fields and field relationships
-    VerifyOrExit(IsValidSupportedLocation(aNewLocation), 
-                ChipLogError(Zcl,  "ModifySupportedLocation %u - not a valid location object", aNewLocation.locationId));
+    VerifyOrExit(locationExists,
+            ChipLogError(Zcl,  "ModifySupportedLocation %u - not a supported locationId", aLocationId)); 
 
-    // updated location description must not match another existing location description
-    VerifyOrExit(IsUniqueSupportedLocation(aNewLocation),
-                ChipLogError(Zcl,  "ModifySupportedLocation %u - not a unique location object", aNewLocation.locationId));
+    {
+        // create location object for validation
+        LocationStructureWrapper aNewLocation(  aLocationId, aMapId,
+                                                aLocationName, aFloorNumber, aAreaType, 
+                                                aLandmarkTag, aPositionTag, aSurfaceTag);
+
+        // verify cluster requirements concerning valid fields and field relationships
+        VerifyOrExit(IsValidSupportedLocation(aNewLocation), 
+                    ChipLogError(Zcl,  "ModifySupportedLocation %u - not a valid location object", aNewLocation.locationId));
+
+        // updated location description must not match another existing location description
+        VerifyOrExit(IsUniqueSupportedLocation(aNewLocation),
+                    ChipLogError(Zcl,  "ModifySupportedLocation %u - not a unique location object", aNewLocation.locationId));
 
 
-    // success! replace the supported location with the modified location 
-    locationIter->second = aNewLocation;
-    ret_value = true;
-    NotifySupportedLocationsChanged();
+        // success! replace the supported location with the modified location 
+        *locationInSupportedLocations = aNewLocation;
+        ret_value = true;
+        NotifySupportedLocationsChanged();
 
-    // update other attributes as required by the supported location change
-    HandleSupportedLocationModified(aLocationId); 
-
+        // update other attributes as required by the supported location change
+        HandleSupportedLocationModified(aLocationId); 
+    }
 
 exit:
     return ret_value; 
@@ -809,28 +815,21 @@ bool Instance::PruneSupportedLocations()
     bool progressChanged           = false;
 
     // carefully iterate through SupportedLocations while possibly deleting some of them
-    auto locationIter = mSupportedLocations.begin();
+    uint32_t                         locationIndex = 0;
+    const LocationStructureWrapper * suppportedLocation;
 
-    while (locationIter != mSupportedLocations.end())
+    while (GetSupportedLocationByIndex(locationIndex, suppportedLocation))
     {
         // remove supported location if mapId is no longer valid
-        if ((!locationIter->second.mapId.IsNull()) &&
-            (!IsSupportedMap(locationIter->second.mapId.Value())))
+        if ((!suppportedLocation->mapId.IsNull()) &&
+            (!IsSupportedMap(suppportedLocation->mapId.Value())))
         {
             supportedLocationsChanged = true; // deleted at least one supported location
-            uint32_t aLocationId = locationIter->second.locationId; // grab the location id before deleting it
+            uint32_t aLocationId = suppportedLocation->locationId; // grab the location id before deleting it
 
-            // delete the entry, moves iterator to next in list
-            locationIter = mSupportedLocations.erase(locationIter);
+            // delete the entry, sets the index to next in list
+            locationIndex = mDelegate->RemoveSupportedLocationByIndex(locationIndex);
             
-            // The CurrentLocation attribute SHALL be set to null if deleted from the supported locations
-            if ((!mCurrentLocation.IsNull()) &&
-                (IsSupportedLocation(mCurrentLocation.Value())))
-            {
-                mCurrentLocation.SetNull();
-                currentLocationChanged = true;
-            }
-
             // remove deleted location from selected locations
             if (DeleteSelectedLocation(aLocationId))
             {
@@ -846,12 +845,20 @@ bool Instance::PruneSupportedLocations()
         }
         else
         {
-            // location is still good, not deleted, move on to next one
-            ++locationIter;
+            // location not deleted, move on to next one
+            ++locationIndex;
         }
 
     } // end of while()
 
+
+    // The CurrentLocation attribute SHALL be set to null if deleted from the supported locations
+    if ((!mCurrentLocation.IsNull()) &&
+        (IsSupportedLocation(mCurrentLocation.Value())))
+    {
+        mCurrentLocation.SetNull();
+        currentLocationChanged = true;
+    }
 
     // MATTER notifications for changed attributes
     if (supportedLocationsChanged)
@@ -887,16 +894,15 @@ bool Instance::PruneSupportedLocations()
     return supportedLocationsChanged;
 }
 
-bool Instance::DeleteSupportedLocation(uint32_t aLocationId)
+bool Instance::RemoveSupportedLocationById(uint32_t aLocationId)
 {
-    return (mSupportedLocations.erase(aLocationId) > 0);
+    return true;
 }
 
-bool Instance::ClearSupportedLocationsList()
+bool Instance::ClearSupportedLocationsAndUpdate()
 {
-    if (mSupportedLocations.size() != 0)
+    if (mDelegate->ClearSupportedLocations())
     {
-        mSupportedLocations.clear();
         NotifySupportedLocationsChanged();
 
         // When Supported Locations change, the following attributes SHALL be set to null: SelectedLocations, CurrentLocation, and Progress.
@@ -1313,7 +1319,7 @@ void Instance::GetProgressElementIds(std::vector<uint32_t> & aProgressIds)
     }
 }
 
-bool Instance::GetProgressElementById(uint32_t aLocationId, const Structs::ProgressStruct::Type*& aProgressElement)
+bool Instance::GetProgressElementById(uint32_t aLocationId, const Structs::ProgressStruct::Type** aProgressElement)
 {
     bool ret_value = false;
 
@@ -1321,7 +1327,7 @@ bool Instance::GetProgressElementById(uint32_t aLocationId, const Structs::Progr
 
     if (progressIter != mProgressList.end())
     {
-        aProgressElement = &progressIter->second;
+        *aProgressElement = &progressIter->second;
         ret_value = true;
     }
 

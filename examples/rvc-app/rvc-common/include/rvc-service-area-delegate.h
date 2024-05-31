@@ -23,6 +23,7 @@
 #include <protocols/interaction_model/StatusCode.h>
 
 #include <string>
+#include <map>
 
 
 namespace chip {
@@ -47,7 +48,22 @@ private:
     RvcDevice * mSetSelectedLocationAllowedInstance;
     IsSetSelectedLocationAllowedCallback mSetSelectedLocationAllowedCallback;
 
+    // containers for array attributes
+    std::map<uint32_t, LocationStructureWrapper>       mSupportedLocationsById;     // main storage for supported locations
+    std::vector<LocationStructureWrapper*>             mSupportedLocationsByIndex;  // for fast indexed access - mainly for attribute reads and validations.
+                                                                                    // puts a O(n) update burden on Add and Delete functions
+
+    // aliases for container types
+    using SupportedLocationPairType = decltype(mSupportedLocationsById)::value_type;
+    using SupportedLocationType     = decltype(mSupportedLocationsById)::mapped_type;
+
+
 public:
+
+    void SetIsSetSelectedLocationCallback(IsSetSelectedLocationAllowedCallback aCallback, RvcDevice * aInstance);
+
+
+protected:
 
 void HandleVolatileCurrentLocation(const DataModel::Nullable<uint32_t> prevCurrentLocation) override;
 
@@ -55,15 +71,38 @@ void HandleVolatileEstimatedEndTime(const DataModel::Nullable<uint32_t> prevEsti
 
 void HandleSelectedLocationsChanged() override;
 
-virtual void HandleVolatileProgressList() override;   
+void HandleVolatileProgressList() override;   
 
 bool IsSetSelectedLocationAllowed(std::string & statusText) override;
-
-void SetIsSetSelectedLocationCallback(IsSetSelectedLocationAllowedCallback aCallback, RvcDevice * aInstance);
 
 bool HandleSetSelectLocations(const std::vector<uint32_t> & newSelectLocations, SelectLocationsStatus & locationStatus, std::string & locationStatusText) override;
 
 bool HandleSkipCurrentLocation(std::string & skipStatusText) override;
+
+
+
+//*************************************************************************
+// Supported Locations accessors
+
+void ReloadSupportedLocationsVector();
+
+size_t GetNumberOfSupportedLocations() override;
+
+bool GetSupportedLocationByIndex(uint32_t listIndex, const LocationStructureWrapper *& supportedLocation) override;
+
+bool GetSupportedLocationById(uint32_t aLocationId, const LocationStructureWrapper *& supportedLocation) override;
+
+bool GetWritableSupportedLocationById(uint32_t aLocationId, LocationStructureWrapper *& supportedLocation) override;
+
+bool IsSupportedLocation(uint32_t aLocationId) override;
+
+bool AddSupportedLocation(const LocationStructureWrapper & supportedLocation) override;
+
+uint32_t RemoveSupportedLocationByIndex(uint32_t  locationIndex) override;
+
+bool RemoveSupportedLocationById(uint32_t aLocationId) override;
+
+bool ClearSupportedLocations() override;
 
 };
 

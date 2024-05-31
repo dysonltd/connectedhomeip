@@ -19,6 +19,7 @@
 #pragma once
 
 #include "service-area-cluster-objects.h"
+#include "service-area-array-attributes-delegate.h"
 #include <app-common/zap-generated/cluster-objects.h>
 
 #include <app/AttributeAccessInterface.h>
@@ -107,8 +108,8 @@ private:
     EndpointId mEndpointId;
     ClusterId mClusterId;
 
-    // Attribute Data Store
-    std::map<uint32_t, LocationStructureWrapper>       mSupportedLocations;  // class includes text storage for name field & utility functions
+    // Attribute Data Store - note that array attributes are handled through ServiceAreaArrayAttributeDelegate to handle memory allocation issues
+
     std::map<uint8_t, MapStructureWrapper>             mSupportedMaps;       // class includes text storage for name field & utility functions
     std::list<uint32_t>                                mSelectedLocations;   // If this attribute lists more than one location, and the ListOrder feature is set to 1, 
                                                                              // the device SHALL attempt to operate at the selected locations in the order they're listed in.
@@ -118,9 +119,6 @@ private:
     BitMask<ServiceArea::Feature>                      mFeature;
 
 
-    // aliases for container types
-    using SupportedLocationPairType = decltype(mSupportedLocations)::value_type;
-    using SupportedLocationType     = decltype(mSupportedLocations)::mapped_type;
     using SupportedMapPairType      = decltype(mSupportedMaps)::value_type; 
     using SupportedMapType          = decltype(mSupportedMaps)::mapped_type;
     using ProgressPairType          = decltype(mProgressList)::value_type; 
@@ -246,19 +244,22 @@ public:
     // Supported Locations manipulators
 
     /**
-     * @brief Get the list of currently supported location Id's
-     * @param aSupportedLocationIds empty vector to be filled with location Id's
+     * @brief Get a supported location using an index (for iterating)
+     * @param locationIndex the index to use
+     * @param aSupportedLocation  pointer to the supported location object - null if not found
+     * @return bool if location found
+     * @note location pointer has limited lifetime - only valid until supported locations list is changed
     */
-    void GetSupportedLocationIds(std::vector<uint32_t> & aSupportedLocationIds);
+    bool GetSupportedLocationByIndex(uint32_t locationIndex, const LocationStructureWrapper *& aSupportedLocation);
 
     /**
-     * @brief Get information about a supported location using the locationId
+     * @brief Get a supported location using the locationId
      * @param aLocationId the locationId to use
      * @param aSupportedLocation  const pointer to the supported location object - null if not found
      * @return bool if location found
      * @note location pointer has limited lifetime - only valid until supported locations list is changed
     */
-    bool GetSupportedLocationById(uint32_t aLocationId, const LocationStructureWrapper*& aSupportedLocation);
+    bool GetSupportedLocationById(uint32_t aLocationId, const LocationStructureWrapper *& aSupportedLocation);
 
     /**
      * @brief Is the location in the supported locations list?
@@ -296,8 +297,8 @@ public:
      * @return true if the new location passed validation checks and was successfully added to the list
      * @note caller is responsible for change notification (caller may be making more than one call to AddSupportedLocation)
      * @note if aLocationName is larger than kLocationtNameMaxSize, it will be truncated
-
      */
+
     bool AddSupportedLocation( uint32_t                                     aLocationId, 
                                const DataModel::Nullable<uint8_t>         & aMapId, 
                                const CharSpan                             & aLocationName,
@@ -320,8 +321,7 @@ public:
      * @return true if the location is a member of supported locations, the modifications pass all validation checks and the location was modified 
      * @note caller is responsible for change notification
      * @note if aLocationName is larger than kLocationtNameMaxSize, it will be truncated
-
-     */
+    */
     bool ModifySupportedLocation( uint32_t                                     aLocationId, 
                                   const DataModel::Nullable<uint8_t>         & aMapId, 
                                   const CharSpan                             & aLocationName,
@@ -362,7 +362,7 @@ public:
      * @note if the specified location is not a member of the supported location list, returns false with no action taken.
      * @note caller is responsible for change notification
      */
-    bool DeleteSupportedLocation(uint32_t aLocationId);
+    bool RemoveSupportedLocationById(uint32_t aLocationId);
 
     /**
      * @brief Clear the Supported Locations list
@@ -370,7 +370,7 @@ public:
      * @note SelectedLocations, CurrentLocation, and Progress are set to null.
      * @note MATTER change notifications are made for the attributes that change
      */
-    bool ClearSupportedLocationsList();
+    bool ClearSupportedLocationsAndUpdate();
 
 
     //*************************************************************************
@@ -543,7 +543,7 @@ public:
      * @note progress element pointer has limited lifetime - only valid until progress list is changed
      * @note change progress element contents with provided set functions
     */
-    bool GetProgressElementById(uint32_t aLocationId, const Structs::ProgressStruct::Type*& aProgressElement);
+    bool GetProgressElementById(uint32_t aLocationId, const Structs::ProgressStruct::Type** aProgressElement);
 
     /**
      * @brief Is the progress element in the progress list?
@@ -629,7 +629,7 @@ public:
  * Location::Delegate Defines methods for implementing application-specific
  * logic for the Location Cluster.
  */
-class Delegate : public Uncopyable
+class Delegate : private ServiceAreaArrayAttributeDelegate, public Uncopyable
 {
 public:
     Delegate() = default;
